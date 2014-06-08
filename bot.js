@@ -1,3 +1,4 @@
+#!/usr/local/bin/node
 var net = require('net');
 var connected = false;
 var c;
@@ -5,7 +6,7 @@ var c;
 function parse(m) {
     // This function is reponsible for all the 
     // parsing we are going to do
-    m = "" + m
+    m = m.toString();
     var msg = {
         "cmd": undefined,
         "who": undefined,
@@ -38,7 +39,8 @@ var server = new net.createServer(function (s) {
         socket = s;
     });
     s.on('close', function (d) {
-       c.write("QUIT\n");
+       c.write("\r\nQUIT\r\n");
+       connected == false;
     });
     s.on('error', function (e) {
         console.log(JSON.stringify(e));
@@ -46,26 +48,26 @@ var server = new net.createServer(function (s) {
 }).listen(4269, '0.0.0.0');
 
 function client(socket) {
-if (!connected) {
-    c = new net.Socket()
-    console.log("connecting to freenode...");
-    c.connect(6667, "chat.freenode.net", function () {
-        c.write('USER olympicsbot 8 * :OlympicsBot\r\n');
-        c.write('NICK olympicstest\r\n');
-    });
-}
-c.on('data', function (d) {
-    console.log("" + d);
-    m = ("" + d).split('\r\n');
-    for (i in m) {
-        if (i === undefined) continue;
-        socket.write(JSON.stringify(parse(m[i])) + "\n");
+    if (!connected) {
+        c = new net.Socket()
+        console.log("connecting to freenode...");
+        c.connect(6667, "chat.freenode.net", function () {
+            c.write('USER olympicsbot 8 * :OlympicsBot\r\n');
+            c.write('NICK olympicstest\r\n');
+        });
     }
-});
-c.on('close', function () {
-    console.log("Connection closed");
-});
-c.on('error', function (e) {
-    console.log(JSON.stringify(e));
-});
+    c.on('data', function (d) {
+        console.log(d.toString());
+        m = d.toString().split('\r\n');
+        for (i in m) {
+            if (i === undefined) continue;
+            socket.write(JSON.stringify(parse(m[i])) + "\n");
+        }
+    });
+    c.on('close', function () {
+        console.log("Connection closed");
+    });
+    c.on('error', function (e) {
+        console.log(JSON.stringify(e));
+    });
 }
